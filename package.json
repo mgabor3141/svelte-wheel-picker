@@ -1,5 +1,5 @@
 {
-	"name": "apple-wheel-picker-svelte-library",
+	"name": "svelte-wheel-picker",
 	"version": "0.0.1",
 	"scripts": {
 		"dev": "vite dev",
