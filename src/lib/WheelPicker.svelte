@@ -11,11 +11,11 @@ export type Options = {
         overflow?: "hidden" | "visible"
     };
 export type FillParentOn = {
-        enable: true
+        disable: false
         height?:undefined
     };
 export type FillParentOff = {
-        enable: false,
+        disable: true,
         height?: string
     };
 export type HoverEffectOff = {
@@ -64,7 +64,7 @@ export type DataOption = {value: number|string, label: string}
     ];
     export let selectedOption:DataOption = data[0]
     export let rollOnHover:HoverEffectOff|HoverEffectOn = {enable:false};
-    export let fillParent:FillParentOff|FillParentOn = {enable:false};
+    export let fillParent:FillParentOff|FillParentOn = {disable:false};
     export let options: Options = {};
     
         
@@ -76,7 +76,7 @@ export type DataOption = {value: number|string, label: string}
         stamp = !hoverEnabled ? false : rollOnHover?.stamp ?? false,
         fixList = !hoverEnabled ? false : rollOnHover?.fixList ?? !stamp, 
         transformSpeed = !hoverEnabled ? false : rollOnHover?.transformSpeed ?? 0.3 
-    let {enable: fillParentEnabled = true, height} = fillParent;
+    let {disable: fillParentDisabled = true, height} = fillParent;
     let {   visibleOptions = 7,
             density = visibleOptions*2,
             marginY = 2,
@@ -108,22 +108,22 @@ export type DataOption = {value: number|string, label: string}
     $: yOffset = dragPosition === 0 ? 0 : dragPosition - touchstartPosition;
     $: scrollPercent = pickerDisplacement/maxScroll;
     $: rotationDisplacement = maxAngle*scrollPercent;
-    $: fillParentStyle = fillParentEnabled || !height 
-            ? "height: 100%; width: 100%" 
-            : `height: calc(${height} * ${perspectiveScaleOffset}); width: ${longestLabel.length * 2}ch`;
-    $: wrap = !hoverEnabled || (dragPosition || hovering);
+    $: fillParentStyle = !fillParentDisabled && !height 
+            ?  `height: calc(${height}); width: ${longestLabel.length * 2}ch` : "height: 100%; width: 100%" ;
+    $: wrap = !hoverEnabled || (dragPosition || hovering) ? true : false;
     $: perspectiveScaleOffset = stamp && wrap ? 1/(1+(density-visibleOptions)/density) : hoverEnabled ? 1 : Math.max(1, 1+perspective/200)
     $: wheelWrapperScale = `transform: scale(${perspectiveScaleOffset})`;
     $: wheelContainerTop = !hoverEnabled || (fixList && wrap) || (!fixList && !stamp) 
             ? `calc(50% - ${lineHeight/2.15}px)` : `0%` ;
-    $: wheelContainerOffset = hoverEnabled && stamp ? -pickerDisplacement*0.5 
-            : !hoverEnabled || !fixList || (wrap && fixList)
+    $: wheelContainerOffset = hoverEnabled && (stamp && wrap) ? -pickerDisplacement*0.5 
+            : !hoverEnabled || (!fixList && !stamp) || (wrap && fixList)
             ? pickerDisplacement : 0;
     $: wheelContainerTransform = `translateY(${wheelContainerTop}) translateY(${wheelContainerOffset}px);`;
     $: fillWidthLineHeight = (wheelWindowWidth*1.3)/(longestLabel.length*Math.max(1, perspectiveScaleOffset));
     $: fillHeightLineHeight = Math.round( (wheelWindowHeight) / (stamp ? data.length : Math.min(visibleOptions, data.length)))*0.8;
     $: lineHeight = Math.min(fillWidthLineHeight, fillHeightLineHeight);
     $: fontSize = lineHeight*0.8
+    $: console.log( !stamp, !hoverEnabled, !fixList, (wrap && fixList))
 
 // Reactive statements
 
@@ -132,9 +132,9 @@ export type DataOption = {value: number|string, label: string}
     $: perspective = Math.max(-90, Math.min(stamp ? 180 : 90, perspective)) 
     //clamp visible options to reasonable values
     $: visibleOptions = Math.max(3, Math.min(stamp ? 180 : 90, visibleOptions)) 
-    $: density = fillParentEnabled ? visibleOptions*2 : density
-    $: if (!fillParentEnabled && !height) {
-            console.warn("The fillParent prop is enabled but its `height` property is not set, the WheelPicker will automatically fill the parent until the height is set.");
+    $: density = fillParentDisabled ? visibleOptions*2 : density
+    $: if (!fillParentDisabled && !height) {
+            console.warn("The fillParent prop is disabled but its `height` property is not set, the WheelPicker will automatically fill the parent until the height is set.");
         };
     $: if (unwrap as number > 99 ) {
             unwrap = 99; 
@@ -264,7 +264,7 @@ export type DataOption = {value: number|string, label: string}
             font-size: {fontSize}px; 
             line-height:{lineHeight}px; 
             overflow: {overflow};
-            border: {overflow === "hidden" ? "2px solid darkgray" : ""};
+            border: 2px solid darkgray;
         "
      on:mousedown|preventDefault|stopPropagation={grabWheel}    
      on:touchstart|preventDefault|stopPropagation|nonpassive={grabWheel}
@@ -295,7 +295,7 @@ export type DataOption = {value: number|string, label: string}
                 <span class="wheelOption" 
                     style=" {wheelStyle[i]}; 
                             {i === optionToSelect.index  ? "opacity: 1" : ""};
-                            {(hoverEnabled && !dragPosition) || !dragPosition ?`transition: transform ${transformSpeed}s ease-in-out` : ""}
+                            {(hoverEnabled && !dragPosition) || !dragPosition ?`transition: transform ${transformSpeed}s ease-in-out, opacity ${transformSpeed}s ease-in-out` : ""}
                           "
                 >
                     {option.label}
