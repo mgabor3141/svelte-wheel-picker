@@ -35,9 +35,7 @@ export type HoverEffectOn = {
 export type DataOption = {value: number|string, label: string}
 </script>
 <script lang="ts"> 
-    
-
-    
+        
 //Props
 
     export let classes:string = ""
@@ -85,7 +83,7 @@ export type DataOption = {value: number|string, label: string}
             perspective = 0,
             staticPointerTimer = 200,
             friction = 4,
-            overflow = hoverEnabled && !fixList ? "visible" : "hidden"
+            overflow = hoverEnabled ? "visible" : "hidden"
         } = options;
     let leaningAngle:number[] = [];
     let wheelStyle:string[] = [];
@@ -219,7 +217,7 @@ export type DataOption = {value: number|string, label: string}
             
             const absRotation = Math.abs(wrap ? rotateX : leaningAngle[index]);
 
-            const scale = (density-visibleOptions)/density+((180-absRotation)/180)**1.4
+            const scale = wrap ? (density-visibleOptions)/density+((180-absRotation)/180)**1.4 : 1
             
             const opacity = 0.6-absRotation/(wrap ? 150 : 300);
             
@@ -243,7 +241,6 @@ export type DataOption = {value: number|string, label: string}
     };
     function resetDrag(center:boolean) {
         touchstartPosition = 0;
-        dragPosition = 0;
         prevDisplacement = Math.max(Math.min(prevDisplacement+yOffset, 0), maxScroll);
         prevOffset = 0;
         if (center) centerSelectedOption();
@@ -253,6 +250,8 @@ export type DataOption = {value: number|string, label: string}
         if (Math.abs(optionToSelect.angle) > 0.5 && !dragPosition && pickerDisplacement > maxScroll) {
             await asyncTimeout(8);
             centerSelectedOption();
+        } else {
+            dragPosition = 0;
         }
     };
 
@@ -296,7 +295,7 @@ export type DataOption = {value: number|string, label: string}
                 <span class="wheelOption" 
                     style=" {wheelStyle[i]}; 
                             {i === optionToSelect.index  ? "opacity: 1" : ""};
-                            {!hoverEnabled && dragPosition ? "" : `transition: transform ${transformSpeed}s ease-in-out`}
+                            {(hoverEnabled && !dragPosition) || !dragPosition ?`transition: transform ${transformSpeed}s ease-in-out` : ""}
                           "
                 >
                     {option.label}
