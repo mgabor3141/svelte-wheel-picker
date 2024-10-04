@@ -67,7 +67,7 @@ export type DataOption = {value: number|string, label: string}
     export let selectedOption:DataOption = data[0]
     export let rollOnHover:HoverEffectOff|HoverEffectOn = {enable:false};
     export let fillParent:FillParentOff|FillParentOn = {enable:false};
-    export let options: Options;
+    export let options: Options = {};
     
         
 // Local State
@@ -305,10 +305,7 @@ export type DataOption = {value: number|string, label: string}
         </div>
     </div>
 </div>
-<div class="options">    
-    <input type="number" bind:value={perspective}>
-    <input type="number" bind:value={visibleOptions}>
-</div>
+
 <style>
     * {
         box-sizing: border-box;
@@ -319,6 +316,7 @@ export type DataOption = {value: number|string, label: string}
         flex-direction: column;
     }
     .wheelWindow {
+        min-height: 4rem;
         height: 90%;
         width: 90%;
         cursor: grab;
