@@ -7,19 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      eslint-compat-utils:
-        specifier: ^0.5.1
-        version: 0.5.1(eslint@8.57.1)
-      eslint-scope:
-        specifier: ^7.2.2
-        version: 7.2.2
-      eslint-visitor-keys:
-        specifier: ^3.4.3
-        version: 3.4.3
-      svelte-eslint-parser:
-        specifier: ^0.36.0
-        version: 0.36.0(svelte@4.2.19)
     devDependencies:
       '@playwright/test':
         specifier: ^1.47.2
@@ -48,12 +35,21 @@ importers:
       eslint:
         specifier: ^8.57.1
         version: 8.57.1
+      eslint-compat-utils:
+        specifier: ^0.5.1
+        version: 0.5.1(eslint@8.57.1)
       eslint-config-prettier:
         specifier: ^9.1.0
         version: 9.1.0(eslint@8.57.1)
       eslint-plugin-svelte:
         specifier: ^2.44.1
         version: 2.44.1(eslint@8.57.1)(svelte@4.2.19)
+      eslint-scope:
+        specifier: ^7.2.2
+        version: 7.2.2
+      eslint-visitor-keys:
+        specifier: ^3.4.3
+        version: 3.4.3
       prettier:
         specifier: ^3.3.3
         version: 3.3.3
@@ -69,6 +65,9 @@ importers:
       svelte-check:
         specifier: ^3.8.6
         version: 3.8.6(postcss-load-config@3.1.4(postcss@8.4.47))(postcss@8.4.47)(svelte@4.2.19)
+      svelte-eslint-parser:
+        specifier: ^0.36.0
+        version: 0.36.0(svelte@4.2.19)
       tslib:
         specifier: ^2.7.0
         version: 2.7.0
