@@ -1,6 +1,6 @@
 {
 	"name": "svelte-wheel-picker",
-	"version": "0.0.1",
+	"version": "0.19.0",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run package",

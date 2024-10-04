@@ -1,40 +1,48 @@
-<script lang="ts"> 
-    
-    //Types
-    type Options = {
+<script context="module" lang="ts">
+// Export Types
+
+export type Options = {
         visibleOptions?: number,
         density?: number,
         marginY ?: number,
         perspective?: number,
         staticPointerTimer?: number,
         friction?: number,
-        selectedOption?:Partial<typeof data[0]>,
         overflow?: "hidden" | "visible"
-        cylindrical?: boolean
     };
-    type FillParentOff = {
-        enable: false
+export type FillParentOn = {
+        enable: true
         height?:undefined
     };
-    type FillParentOn = {
-        enable: true,
-        height: string
-    };
-    type HoverEffectOff = {
+export type FillParentOff = {
         enable: false,
-        contract?: undefined,
-        stampPage?: undefined,
+        height?: string
+    };
+export type HoverEffectOff = {
+        enable: false,
+        unwrap?: undefined,
+        stamp?: undefined,
+        fixList?: undefined,
         transformSpeed?: undefined,
     };
-    type HoverEffectOn = {
+export type HoverEffectOn = {
         enable: true,
-        contract?: number,
-        stampPage?: boolean,
+        unwrap?: number,
+        stamp?: boolean,
+        fixList?: boolean,
         transformSpeed?: number,
-    };
+};
+export type DataOption = {value: number|string, label: string}
+</script>
+<script lang="ts"> 
     
-    //Props
-    export let data:{value: number|string, label: string}[] = [
+
+    
+//Props
+
+    export let classes:string = ""
+    export let style:string = ""
+    export let data:DataOption[] = [
         {value: 5, label: "This is"},
         {value: 10, label: "only a"},
         {value: 15, label: "placeholder "},
@@ -56,28 +64,29 @@
         {value: 145, label: "perspective:number"},
         {value: 160, label: "bearingFriction:number"},
     ];
+    export let selectedOption:DataOption = data[0]
     export let rollOnHover:HoverEffectOff|HoverEffectOn = {enable:false};
     export let fillParent:FillParentOff|FillParentOn = {enable:false};
     export let options: Options;
     
         
-    // Local State
+// Local State
+
+    // not using destructuring to enforce default values if !hoverEnabled
+    let hoverEnabled = rollOnHover?.enable || false, 
+        unwrap = !hoverEnabled ? false : rollOnHover?.unwrap ?? 85, 
+        stamp = !hoverEnabled ? false : rollOnHover?.stamp ?? false,
+        fixList = !hoverEnabled ? false : rollOnHover?.fixList ?? !stamp, 
+        transformSpeed = !hoverEnabled ? false : rollOnHover?.transformSpeed ?? 0.3 
+    let {enable: fillParentEnabled = true, height} = fillParent;
     let {   visibleOptions = 7,
             density = visibleOptions*2,
-            marginY  = 10,
+            marginY = 2,
             perspective = 0,
             staticPointerTimer = 200,
             friction = 4,
-            selectedOption = data[0],
-            overflow = "hidden",
-            cylindrical = true,
+            overflow = hoverEnabled && !fixList ? "visible" : "hidden"
         } = options;
-        let {   enable: hoverEnabled, 
-                contract = hoverEnabled ? 1 : 0, 
-                stampPage =  false,
-                transformSpeed = hoverEnabled ? 0.3 : 0
-            } = rollOnHover;
-    let {height, enable: fillParentEnabled} = fillParent;
     let leaningAngle:number[] = [];
     let wheelStyle:string[] = [];
     let yOffset:number = 0;
@@ -90,45 +99,59 @@
     let prevOffset:number = 0;
     let yInertia:number = 0;
     let hovering:boolean = !hoverEnabled;
-    let optionToSelect:{angle:number, index: number} = {angle:1, index: 0}; 
+    let optionToSelect:{angle:number, index: number} = {angle:1, index: 0};
 
-    //Reactive declarations
+//Reactive declarations
+
     $: longestLabel = data.slice().sort((a, b) => a.label.length > b.label.length ? -1 : 1)[0].label;
-    $: maxAngle = ((180+perspective)/visibleOptions) * data.length-1;
-    $: maxScroll = -(wheelContainerHeight/data.length) * data.length-1;
+    $: maxAngle = ((180+perspective)/visibleOptions) * (data.length-1);
+    $: maxScroll =  -wheelContainerHeight + lineHeight;
     $: pickerDisplacement = Math.max(Math.min(prevDisplacement+yOffset, 0), maxScroll);
     $: yOffset = dragPosition === 0 ? 0 : dragPosition - touchstartPosition;
     $: scrollPercent = pickerDisplacement/maxScroll;
     $: rotationDisplacement = maxAngle*scrollPercent;
-    $: wheelContainerTranslate = `transform: translateY(${stampPage ? 0 : pickerDisplacement}px);`;
-    $: wheelWrapperScale = `transform: scale(${1+perspective/180})`;
     $: fillParentStyle = fillParentEnabled || !height 
             ? "height: 100%; width: 100%" 
-            : `height: calc(${height} * ${wrapperScale}); width: ${longestLabel.length * 2}ch`;
-    $: wrapperScale = (1-marginY*0.02)+perspective/180;
-    $: wheelContainerTop = `calc(50% - ${(wrapperScale * wheelContainerHeight ) / ( data.length * 2 )}px)`;
-    $: fillWidthFontSize = wheelWindowWidth/(longestLabel.length);
-    $: fillHeightFontSize = Math.round(wheelWindowHeight/(stampPage ? data.length : visibleOptions))*0.8;
-    $: fontSize = Math.min(fillWidthFontSize, fillHeightFontSize);
+            : `height: calc(${height} * ${perspectiveScaleOffset}); width: ${longestLabel.length * 2}ch`;
+    $: wrap = !hoverEnabled || (dragPosition || hovering);
+    $: perspectiveScaleOffset = stamp && wrap ? 1/(1+(density-visibleOptions)/density) : hoverEnabled ? 1 : Math.max(1, 1+perspective/200)
+    $: wheelWrapperScale = `transform: scale(${perspectiveScaleOffset})`;
+    $: wheelContainerTop = !hoverEnabled || (fixList && wrap) || (!fixList && !stamp) 
+            ? `calc(50% - ${lineHeight/2.15}px)` : `0%` ;
+    $: wheelContainerOffset = hoverEnabled && stamp ? -pickerDisplacement*0.5 
+            : !hoverEnabled || !fixList || (wrap && fixList)
+            ? pickerDisplacement : 0;
+    $: wheelContainerTransform = `translateY(${wheelContainerTop}) translateY(${wheelContainerOffset}px);`;
+    $: fillWidthLineHeight = (wheelWindowWidth*1.3)/(longestLabel.length*Math.max(1, perspectiveScaleOffset));
+    $: fillHeightLineHeight = Math.round( (wheelWindowHeight) / (stamp ? data.length : Math.min(visibleOptions, data.length)))*0.8;
+    $: lineHeight = Math.min(fillWidthLineHeight, fillHeightLineHeight);
+    $: fontSize = lineHeight*0.8
 
-    // Reactive statements
-    $: generateTransforms(rotationDisplacement, hovering);
-    $: if (!options.density) density = visibleOptions*2;
+// Reactive statements
+
+    $: generateTransforms(rotationDisplacement, wrap);
+    //clamp the perspective option to avoid weird rendering
+    $: perspective = Math.max(-90, Math.min(stamp ? 180 : 90, perspective)) 
+    //clamp visible options to reasonable values
+    $: visibleOptions = Math.max(3, Math.min(stamp ? 180 : 90, visibleOptions)) 
+    $: density = fillParentEnabled ? visibleOptions*2 : density
     $: if (!fillParentEnabled && !height) {
-        console.warn("The fillParent prop is enabled but its `height` property is not set, the WheelPicker will automatically fill the parent until the height is set.");
-    };
-    $: if (contract > 99 ) {
-        contract = 99; 
-        console.warn("The `contract` property in the `rollOnHover` prop cannot be higher than 99");
-    };
+            console.warn("The fillParent prop is enabled but its `height` property is not set, the WheelPicker will automatically fill the parent until the height is set.");
+        };
+    $: if (unwrap as number > 99 ) {
+            unwrap = 99; 
+            console.warn("The `unwrap` property in the `rollOnHover` prop cannot be higher than 99");
+        };
+    $: selectedOption = data[optionToSelect.index];
 
-    // Bindings
+// Bindings
+
     let wheelWindowWidth:number;
     let wheelWindowHeight:number;
     let wheelContainerHeight:number;
-    $: console.log(!stampPage)
     
-    // Functions
+// Functions
+
     function grabWheel(e:TouchEvent|MouseEvent) {
         resetDrag(false)
         if (e.type === "mousedown") {
@@ -162,14 +185,13 @@
             prevOffset = yOffset;
         }, staticPointerTimer);
     }
-    function generateTransforms(displacement:number, hovering:boolean) {
+    function generateTransforms(displacement:number, wrap:boolean|number) {
         for (let index = 0; index < data.length; index++) {
 
             leaningAngle[index] =  (index * ((180+perspective)/visibleOptions)) - displacement;
-            const roll = dragPosition || hovering;
-            const currentAngle = roll 
+            const currentAngle = wrap 
                     ? leaningAngle[index] :
-                    leaningAngle[index]-(leaningAngle[index]*(contract/100));
+                    leaningAngle[index]-(leaningAngle[index]*(unwrap as number/100));
             
             if (Math.abs(currentAngle) < Math.abs(optionToSelect.angle)) {
                 optionToSelect.index = index;
@@ -182,42 +204,28 @@
 
             // y = a(x-h)**2 + k where k = 100, y = 0 and x = 0
             const k = 100
-            const h = Math.max(30, 100-visibleOptions*3)
+            const h = Math.max(30)
             const a = -100/h**2
             const x = currentAngle
+            const parabola = a*(x-h)**2+k
 
-            const translateY = !roll 
-                    ? 0 : currentAngle >= 0
-                    ? a*(x-h)**2+k
-                    : -a*(x+h)**2-k
+            // const translateY = !roll 
+            //         ? 0 : currentAngle >= 0
+            //         ? a*(x-h)**2+k
+            //         : -a*(x+h)**2-k
+            const translateY = wrap 
+                    ? rotateX*visibleOptions/Math.PI 
+                    : 0
             
-            const absRotation = Math.abs(rotateX);
+            const absRotation = Math.abs(wrap ? rotateX : leaningAngle[index]);
 
-            const scale = roll ? (density-visibleOptions)/density+((180-absRotation)/180)**1.4 : 1;
+            const scale = (density-visibleOptions)/density+((180-absRotation)/180)**1.4
             
-            const opacity = 0.6-absRotation/150;
+            const opacity = 0.6-absRotation/(wrap ? 150 : 300);
             
-            wheelStyle[index] = `
-                transform: translateY(${translateY}%) rotateX(${rotateX}deg) scale(${scale});
-                transform: translateY(${translateY}%) scale(${scale}); 
-                translate: 0% ${translateY}%;
-                scale: ${scale};
-                rotate: x ${rotateX}deg;
-                opacity: ${opacity};
-                `;
+            wheelStyle[index] = `transform: rotateX(${rotateX}deg) translateY(${translateY}%) scale(${scale}); opacity: ${opacity};`;
         }
     };
-    function resetDrag(center:boolean) {
-        touchstartPosition = 0;
-        dragPosition = 0;
-        prevDisplacement = Math.max(Math.min(prevDisplacement+yOffset, 0), maxScroll);
-        prevOffset = 0;
-        if (center) centerSelectedOption();
-    };
-    function round(num: number, decimalPoints: number = 1) {
-        decimalPoints = Math.max(0, decimalPoints)
-        return Math.round(10**decimalPoints*num)/10**decimalPoints
-    }
     async function asyncTimeout(ms:number) {
         return new Promise(res => setTimeout(res, ms));
     };
@@ -233,21 +241,32 @@
             resetDrag(true);
         };
     };
+    function resetDrag(center:boolean) {
+        touchstartPosition = 0;
+        dragPosition = 0;
+        prevDisplacement = Math.max(Math.min(prevDisplacement+yOffset, 0), maxScroll);
+        prevOffset = 0;
+        if (center) centerSelectedOption();
+    };
     async function centerSelectedOption() {
         yOffset -= optionToSelect.angle*friction/100;
-        if (Math.abs(optionToSelect.angle) > 0.5 && !dragPosition) {
+        if (Math.abs(optionToSelect.angle) > 0.5 && !dragPosition && pickerDisplacement > maxScroll) {
             await asyncTimeout(8);
             centerSelectedOption();
-        } else {
-            selectedOption = data[optionToSelect.index];
-            console.log("stopped");
-        };
+        }
     };
 
 </script>
 
-<div class="wheelWindow" role="button" tabindex="0"
-     style="{fillParentStyle}; font-size: {fontSize}px; overflow: {overflow};"
+<div class="wheelWindow {classes}" role="button" tabindex="0"
+     style="{style}; 
+            {fillParentStyle};
+            padding: {marginY}% 0px;
+            font-size: {fontSize}px; 
+            line-height:{lineHeight}px; 
+            overflow: {overflow};
+            border: {overflow === "hidden" ? "2px solid darkgray" : ""};
+        "
      on:mousedown|preventDefault|stopPropagation={grabWheel}    
      on:touchstart|preventDefault|stopPropagation|nonpassive={grabWheel}
      on:mouseup|preventDefault|stopPropagation={releaseWheel}
@@ -259,18 +278,25 @@
      bind:clientHeight={wheelWindowHeight} 
      bind:clientWidth={wheelWindowWidth}
 >
-    <div class="wheelWrapper" style="{wheelWrapperScale};">
+    <div class="wheelWrapper" 
+        style="
+            {wheelWrapperScale};
+            {hoverEnabled && stamp ? `transition: transform ${transformSpeed}s ease-in-out` : ""};
+            transform-origin: {hoverEnabled && stamp ? "top" : "center"};
+        "
+    >
         <div class="wheelContainer" 
             bind:clientHeight={wheelContainerHeight}
-            style=" top: {stampPage ? `${marginY}px` : wheelContainerTop}; 
-                    {wheelContainerTranslate};
+            style=" transform: {wheelContainerTransform};
+                    height: {Math.max(wheelWindowHeight, lineHeight*data.length)}px;
+                    {!dragPosition ? `transition: transform ${transformSpeed}s ease-in-out` : ""};
                   "
         >
             {#each data as option, i (i)}
                 <span class="wheelOption" 
                     style=" {wheelStyle[i]}; 
                             {i === optionToSelect.index  ? "opacity: 1" : ""};
-                            {dragPosition ? "" : `transition: transform ${transformSpeed}s ease-in-out, translate ${transformSpeed}s ease-in-out, scale ${transformSpeed}s ease-in-out, rotate ${transformSpeed}s 0.1s ease-in-out;`}
+                            {!hoverEnabled && dragPosition ? "" : `transition: transform ${transformSpeed}s ease-in-out`}
                           "
                 >
                     {option.label}
@@ -279,12 +305,22 @@
         </div>
     </div>
 </div>
-
+<div class="options">    
+    <input type="number" bind:value={perspective}>
+    <input type="number" bind:value={visibleOptions}>
+</div>
 <style>
+    * {
+        box-sizing: border-box;
+    }
+
+    .options {
+        display: flex;
+        flex-direction: column;
+    }
     .wheelWindow {
         height: 90%;
         width: 90%;
-        border: 2px solid darkgray;
         cursor: grab;
 	    font-family: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
 		Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -302,12 +338,13 @@
         position: absolute;
         display: flex;
         flex-direction: column;
-        justify-content: flex-start;
+        justify-content: space-between;
         align-items: center;
         width: 100%;
     }
 
     span {
         white-space: nowrap;
+        vertical-align: middle;
     }
 </style>
