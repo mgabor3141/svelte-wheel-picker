@@ -258,13 +258,12 @@ export type DataOption = {value: number|string, label: string}
 </script>
 
 <div class="wheelWindow {classes}" role="button" tabindex="0"
-     style="{style}; 
-            {fillParentStyle};
+     style="{fillParentStyle};
             padding: {marginY}% 0px;
             font-size: {fontSize}px; 
             line-height:{lineHeight}px; 
             overflow: {overflow};
-            border: 2px solid darkgray;
+            {style}; 
         "
      on:mousedown|preventDefault|stopPropagation={grabWheel}    
      on:touchstart|preventDefault|stopPropagation|nonpassive={grabWheel}
