@@ -1,10 +1,10 @@
 <script lang="ts">
-	import WheelPickerProtoType from "$lib/WheelPickerPrototype.svelte";
+	// import WheelPickerProtoType from "$lib/WheelPickerPrototype.svelte";
 	import WheelPicker from "$lib/WheelPicker.svelte";
 	import type {DataOption} from "$lib/WheelPicker.svelte";
 
     let options = {
-		visibleOptions: 10,
+		visibleOptions: 20,
 	}
 	let selectedOption:DataOption
 </script>
@@ -17,7 +17,8 @@
 	<WheelPicker 
 		bind:options={options}
 		bind:selectedOption
-		fillParent={{enable:true}}
+		rollOnHover={{enable:true, fixList: false}}
+		fillParent={{disable:true, height: "50%"}}
 	></WheelPicker>
 </div>
 

@@ -76,7 +76,7 @@ export type DataOption = {value: number|string, label: string}
         stamp = !hoverEnabled ? false : rollOnHover?.stamp ?? false,
         fixList = !hoverEnabled ? false : rollOnHover?.fixList ?? !stamp, 
         transformSpeed = !hoverEnabled ? false : rollOnHover?.transformSpeed ?? 0.3 
-    let {disable: fillParentDisabled = true, height} = fillParent;
+    let {disable: fillParentDisabled = false, height} = fillParent;
     let {   visibleOptions = 7,
             density = visibleOptions*2,
             marginY = 2,
@@ -108,7 +108,7 @@ export type DataOption = {value: number|string, label: string}
     $: yOffset = dragPosition === 0 ? 0 : dragPosition - touchstartPosition;
     $: scrollPercent = pickerDisplacement/maxScroll;
     $: rotationDisplacement = maxAngle*scrollPercent;
-    $: fillParentStyle = !fillParentDisabled && !height 
+    $: fillParentStyle = fillParentDisabled && !height 
             ?  `height: calc(${height}); width: ${longestLabel.length * 2}ch` : "height: 100%; width: 100%" ;
     $: wrap = !hoverEnabled || (dragPosition || hovering) ? true : false;
     $: perspectiveScaleOffset = stamp && wrap ? 1/(1+(density-visibleOptions)/density) : hoverEnabled ? 1 : Math.max(1, 1+perspective/200)
@@ -132,8 +132,8 @@ export type DataOption = {value: number|string, label: string}
     $: perspective = Math.max(-90, Math.min(stamp ? 180 : 90, perspective)) 
     //clamp visible options to reasonable values
     $: visibleOptions = Math.max(3, Math.min(stamp ? 180 : 90, visibleOptions)) 
-    $: density = fillParentDisabled ? visibleOptions*2 : density
-    $: if (!fillParentDisabled && !height) {
+    $: density = !fillParentDisabled ? visibleOptions*2 : density
+    $: if (fillParentDisabled && !height) {
             console.warn("The fillParent prop is disabled but its `height` property is not set, the WheelPicker will automatically fill the parent until the height is set.");
         };
     $: if (unwrap as number > 99 ) {
