@@ -1,6 +1,6 @@
 {
   "name": "svelte-wheel-picker",
-  "version": "0.20.0",
+  "version": "0.20.1",
   "author": "Jorge Linares",
   "license": "MIT",
   "publishConfig": {
@@ -54,7 +54,11 @@
     "tslib": "^2.7.0",
     "typescript": "^5.6.2",
     "vite": "^5.4.8",
-    "vitest": "^1.6.0"
+    "vitest": "^1.6.0",
+    "eslint-compat-utils": "^0.5.1",
+    "eslint-scope": "^7.2.2",
+    "eslint-visitor-keys": "^3.4.3",
+    "svelte-eslint-parser": "^0.36.0"
   },
   "svelte": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -65,10 +69,6 @@
     "test": "tests"
   },
   "dependencies": {
-    "eslint-compat-utils": "^0.5.1",
-    "eslint-scope": "^7.2.2",
-    "eslint-visitor-keys": "^3.4.3",
-    "svelte-eslint-parser": "^0.36.0"
   },
   "repository": {
     "type": "git",
