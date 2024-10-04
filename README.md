@@ -1,6 +1,6 @@
 # svelte-wheel-picker
 
-A customizable and interactive wheel picker component for Svelte applications, inspired by the classic iOS time selector.d
+A customizable and interactive wheel picker component for Svelte applications, inspired by the classic iOS time selector.
 
 [![npm version](https://badge.fury.io/js/svelte-wheel-picker.svg)](https://www.npmjs.com/package/svelte-wheel-picker)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
