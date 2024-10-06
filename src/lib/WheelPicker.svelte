@@ -13,10 +13,12 @@ export type Options = {
 export type FillParentOn = {
         disable: false
         height?:undefined
+        width?:undefined
     };
 export type FillParentOff = {
         disable: true,
         height?: string
+        width?: string
     };
 export type HoverEffectOff = {
         enable: false,
@@ -76,7 +78,7 @@ export type DataOption = {value: number|string, label: string}
         stamp = !hoverEnabled ? false : rollOnHover?.stamp ?? false,
         fixList = !hoverEnabled ? false : rollOnHover?.fixList ?? !stamp, 
         transformSpeed = !hoverEnabled ? false : rollOnHover?.transformSpeed ?? 0.3 
-    let {disable: fillParentDisabled = false, height} = fillParent;
+    let {disable: fillParentDisabled = false, height, width} = fillParent;
     let {   visibleOptions = 7,
             density = visibleOptions*2,
             marginY = 2,
@@ -108,8 +110,9 @@ export type DataOption = {value: number|string, label: string}
     $: yOffset = dragPosition === 0 ? 0 : dragPosition - touchstartPosition;
     $: scrollPercent = pickerDisplacement/maxScroll;
     $: rotationDisplacement = maxAngle*scrollPercent;
-    $: fillParentStyle = fillParentDisabled && !height 
-            ?  `height: calc(${height}); width: ${longestLabel.length * 2}ch` : "height: 100%; width: 100%" ;
+    $: fillParentStyle = !fillParentDisabled
+            ? `height: calc(100%); width: ${longestLabel.length * 2}ch` 
+            : `${height ? `height: ${height}` : ""}; ${width ? `width: ${width}` : ""};`
     $: wrap = !hoverEnabled || (dragPosition || hovering) ? true : false;
     $: perspectiveScaleOffset = stamp && wrap ? 1/(1+(density-visibleOptions)/density) : hoverEnabled ? 1 : Math.max(1, 1+perspective/200)
     $: wheelWrapperScale = `transform: scale(${perspectiveScaleOffset})`;
@@ -121,9 +124,10 @@ export type DataOption = {value: number|string, label: string}
     $: wheelContainerTransform = `translateY(${wheelContainerTop}) translateY(${wheelContainerOffset}px);`;
     $: fillWidthLineHeight = (wheelWindowWidth*1.3)/(longestLabel.length*Math.max(1, perspectiveScaleOffset));
     $: fillHeightLineHeight = Math.round( (wheelWindowHeight) / (stamp ? data.length : Math.min(visibleOptions, data.length)))*0.8;
-    $: lineHeight = Math.min(fillWidthLineHeight, fillHeightLineHeight);
+    $: lineHeight = fillParentDisabled && height ? fillHeightLineHeight 
+            : Math.min(fillWidthLineHeight, fillHeightLineHeight);
     $: fontSize = lineHeight*0.8
-    $: console.log( !stamp, !hoverEnabled, !fixList, (wrap && fixList))
+    $: console.log(wheelWindowWidth, fillWidthLineHeight, fillHeightLineHeight)
 
 // Reactive statements
 
@@ -147,11 +151,12 @@ export type DataOption = {value: number|string, label: string}
     let wheelWindowWidth:number;
     let wheelWindowHeight:number;
     let wheelContainerHeight:number;
+    let wheelWrapperHeight:number
     
 // Functions
 
     function grabWheel(e:TouchEvent|MouseEvent) {
-        resetDrag(false)
+        resetDrag()
         if (e.type === "mousedown") {
             mousedown = true;
             touchstartPosition = (e as MouseEvent).clientY;
@@ -236,22 +241,23 @@ export type DataOption = {value: number|string, label: string}
             await asyncTimeout(8);
             continueWheelMomentum()
         } else {
-            resetDrag(true);
+            centerSelectedOption()
         };
     };
-    function resetDrag(center:boolean) {
+    function resetDrag() {
         touchstartPosition = 0;
         prevDisplacement = Math.max(Math.min(prevDisplacement+yOffset, 0), maxScroll);
+        dragPosition = 0;
         prevOffset = 0;
-        if (center) centerSelectedOption();
     };
     async function centerSelectedOption() {
+        if (mousedown) return
         yOffset -= optionToSelect.angle*friction/100;
-        if (Math.abs(optionToSelect.angle) > 0.5 && !dragPosition && pickerDisplacement > maxScroll) {
+        if ( Math.abs(optionToSelect.angle) > 0.5 && dragPosition && pickerDisplacement > maxScroll) {
             await asyncTimeout(8);
             centerSelectedOption();
         } else {
-            dragPosition = 0;
+            resetDrag()
         }
     };
 
@@ -282,11 +288,12 @@ export type DataOption = {value: number|string, label: string}
             {hoverEnabled && stamp ? `transition: transform ${transformSpeed}s ease-in-out` : ""};
             transform-origin: {hoverEnabled && stamp ? "top" : "center"};
         "
+        bind:clientHeight={wheelWrapperHeight} 
     >
         <div class="wheelContainer" 
             bind:clientHeight={wheelContainerHeight}
             style=" transform: {wheelContainerTransform};
-                    height: {Math.max(wheelWindowHeight, lineHeight*data.length)}px;
+                    height: {Math.max(wheelWrapperHeight, lineHeight*data.length)}px;
                     {!dragPosition ? `transition: transform ${transformSpeed}s ease-in-out` : ""};
                   "
         >
