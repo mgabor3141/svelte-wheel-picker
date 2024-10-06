@@ -122,12 +122,10 @@ export type DataOption = {value: number|string, label: string}
             : !hoverEnabled || (!fixList && !stamp) || (wrap && fixList)
             ? pickerDisplacement : 0;
     $: wheelContainerTransform = `translateY(${wheelContainerTop}) translateY(${wheelContainerOffset}px);`;
-    $: fillWidthLineHeight = (wheelWindowWidth*1.3)/(longestLabel.length*Math.max(1, perspectiveScaleOffset));
-    $: fillHeightLineHeight = Math.round( (wheelWindowHeight) / (stamp ? data.length : Math.min(visibleOptions, data.length)))*0.8;
-    $: lineHeight = fillParentDisabled && height ? fillHeightLineHeight 
-            : Math.min(fillWidthLineHeight, fillHeightLineHeight);
+    $: fillWidthLineHeight = (wheelWindowWidth*2)/(longestLabel.length*Math.max(1, perspectiveScaleOffset));
+    $: fillHeightLineHeight = Math.round((wheelWindowHeight) / (stamp ? data.length : Math.min(visibleOptions, data.length)))*0.8;
+    $: lineHeight = Math.min(fillWidthLineHeight, fillHeightLineHeight);
     $: fontSize = lineHeight*0.8
-    $: console.log(wheelWindowWidth, fillWidthLineHeight, fillHeightLineHeight)
 
 // Reactive statements
 
@@ -322,8 +320,8 @@ export type DataOption = {value: number|string, label: string}
     }
     .wheelWindow {
         min-height: 4rem;
-        height: 90%;
-        width: 90%;
+        height: 100%;
+        width: 100%;
         cursor: grab;
 	    font-family: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
 		Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
